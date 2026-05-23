@@ -166,17 +166,18 @@ export default function Home() {
     if (data.id) {
       await fetch(`/api/projects/${data.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-api-key": "local" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
     } else {
       await fetch("/api/projects", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": "local" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
     }
     setEditProject(null);
+    setDetailProject(null);
     fetchProjects();
   };
 
@@ -184,7 +185,6 @@ export default function Home() {
     if (!confirm("Delete this project?")) return;
     await fetch(`/api/projects/${id}`, {
       method: "DELETE",
-      headers: { "x-api-key": "local" },
     });
     setEditProject(null);
     setDetailProject(null);
@@ -264,22 +264,6 @@ export default function Home() {
                       <span className="project-date">{project.date}</span>
                       <p className="project-description">{project.description}</p>
                     </div>
-                    <div className="project-actions">
-                      <button
-                        className="action-btn"
-                        title="Edit"
-                        onClick={(e) => { e.stopPropagation(); setEditProject(project); }}
-                      >
-                        <EditIcon />
-                      </button>
-                      <button
-                        className="action-btn delete"
-                        title="Delete"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
                   </div>
                 </div>
               </article>
@@ -298,9 +282,25 @@ export default function Home() {
           <>
             <div className="detail-close">
               <span className="detail-cat-tag">{detailProject.category}</span>
-              <button className="detail-close-btn" onClick={() => setDetailProject(null)}>
-                &#x2715;
-              </button>
+              <div className="detail-actions">
+                <button
+                  className="action-btn"
+                  title="Edit"
+                  onClick={() => setEditProject(detailProject)}
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  className="action-btn delete"
+                  title="Delete"
+                  onClick={() => handleDelete(detailProject.id)}
+                >
+                  <TrashIcon />
+                </button>
+                <button className="detail-close-btn" onClick={() => setDetailProject(null)}>
+                  &#x2715;
+                </button>
+              </div>
             </div>
             <div className="detail-content">
               <div className="detail-thumb">
