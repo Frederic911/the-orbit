@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Orbit — A record of things I've built</title>
+  <meta name="description" content="A record of things I've built.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #000; --surface: #0a0a0a; --surface-2: #111; --surface-3: #161616;
+      --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.13);
+      --text: #fff; --text-secondary: rgba(255,255,255,0.5); --text-muted: rgba(255,255,255,0.3);
+      --accent: #A49AF3; --accent-dim: rgba(164,154,243,0.12); --accent-hover: #B5AEF4;
+      --panel-bg: #0d0d0d;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace;
+      --content-width: 900px;
+      --card-height: 180px;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    ::selection { background: var(--accent); color: #000; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    a { color: inherit; text-decoration: none; }
+
+    #topbar {
+      position: sticky;
+      top: 16px;
+      z-index: 90;
+      max-width: var(--content-width);
+      margin: 16px auto 0;
+      padding: 0 48px;
+    }
+    .topbar-inner {
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .topbar-logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .topbar-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .filter-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .filter-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+    .topbar-right {
+      flex-shrink: 0;
+    }
+    #add-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 2px 12px rgba(164,154,243,0.3);
+    }
+    #add-btn:hover {
+      transform: scale(1.1) rotate(90deg);
+      background: var(--accent-hover);
+      box-shadow: 0 4px 20px rgba(164,154,243,0.5);
+    }
+    #add-btn:active { transform: scale(0.95); }
+
+    #projects { max-width: var(--content-width); margin: 0 auto; padding: 32px 48px 160px; }
+    #projects-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .project-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+      height: var(--card-height);
+    }
+    .project-card:hover { border-color: var(--border-hover); background: var(--surface-2); transform: translateY(-2px); }
+    .project-card-inner { display: grid; grid-template-columns: 260px 1fr; height: 100%; }
+    .project-thumb { overflow: hidden; background: var(--surface-3); position: relative; }
+    .project-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+    .project-card:hover .project-thumb img { transform: scale(1.03); }
+    .project-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: var(--surface-3);
+      overflow: hidden;
+    }
+    .project-thumb-placeholder .dot-grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 16px 16px;
+      background-position: 8px 8px;
+    }
+    .project-thumb-placeholder svg {
+      opacity: 0.12;
+      width: 40px;
+      height: 40px;
+      color: rgba(255,255,255,0.5);
+      position: relative;
+      z-index: 1;
+    }
+    .project-body { padding: 16px 20px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; position: relative; }
+    .project-top { display: flex; flex-direction: column; gap: 4px; }
+    .project-name { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+    .project-date { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.04em; }
+    .project-description { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .project-links { position: absolute; top: 16px; right: 20px; display: flex; align-items: center; gap: 6px; }
+    .project-link { display: inline-flex; align-items: center; gap: 5px; background: var(--surface-3); border: 1px solid var(--border); color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; padding: 5px 10px; border-radius: 6px; transition: all 0.2s; }
+    .project-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .project-link svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    #detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    #detail-overlay.open { opacity: 1; pointer-events: auto; }
+    #detail-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 480px; max-width: 100%; background: var(--panel-bg); border-left: 1px solid var(--border); z-index: 201; overflow-y: auto; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); overscroll-behavior: contain; }
+    #detail-panel.open { transform: translateX(0); }
+    .detail-close { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: var(--panel-bg); border-bottom: 1px solid var(--border); backdrop-filter: blur(12px); }
+    .detail-close-btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-secondary); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; transition: all 0.2s; flex-shrink: 0; }
+    .detail-close-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .detail-cat-tag { font-family: var(--font-mono); font-size: 10px; color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(164,154,243,0.25); padding: 3px 8px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .detail-content { padding: 28px 24px 48px; }
+    .detail-thumb { width: 100%; height: 220px; border-radius: 10px; overflow: hidden; background: var(--surface-3); margin-bottom: 24px; }
+    .detail-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detail-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; background: var(--surface-3); }
+    .detail-thumb-placeholder .dot-grid { position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 16px 16px; background-position: 8px 8px; }
+    .detail-thumb-placeholder svg { opacity: 0.12; width: 48px; height: 48px; color: rgba(255,255,255,0.5); position: relative; z-index: 1; }
+    .detail-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .detail-date { font-family: var(--font-mono); font-size: 12px; color: var(--accent); letter-spacing: 0.06em; margin-bottom: 16px; }
+    .detail-description { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 24px; }
+    .detail-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .detail-link { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border-hover); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 8px 14px; border-radius: 8px; transition: all 0.2s; }
+    .detail-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .detail-link svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); font-family: var(--font-mono); font-size: 13px; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .project-card { animation: fadeIn 0.25s ease-out forwards; }
+
+    @media (max-width: 720px) {
+      #topbar { padding: 0 16px; top: 12px; margin-top: 12px; }
+      .topbar-inner { padding: 10px 14px; flex-wrap: wrap; gap: 10px; border-radius: 14px; }
+      .topbar-center { order: 3; width: 100%; justify-content: flex-start; }
+      .filter-btn { font-size: 12px; padding: 6px 10px; }
+      #projects { padding: 24px 16px 140px; }
+      .project-card { height: auto; }
+      .project-card-inner { grid-template-columns: 1fr; }
+      .project-thumb { height: 180px; }
+      .project-links { position: static; margin-top: 10px; }
+      #detail-panel { width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .filter-group { gap: 1px; }
+      .filter-btn { font-size: 11px; padding: 5px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <span class="topbar-logo">The Orbit</span>
+      </div>
+      <div class="topbar-center">
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="Startup Ops">Startup Ops</button>
+          <button class="filter-btn" data-filter="Hobby Builds">Hobby Builds</button>
+          <button class="filter-btn" data-filter="Client Projects">Client Projects</button>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button id="add-btn" title="Add project entry" aria-label="Add new project entry">+</button>
+      </div>
+    </div>
+  </header>
+  <section id="projects"><div id="projects-list"></div></section>
+  <div id="detail-overlay"></div>
+  <aside id="detail-panel" role="dialog" aria-label="Project details">
+    <div class="detail-close">
+      <span class="detail-cat-tag" id="detail-cat-tag"></span>
+      <button class="detail-close-btn" id="detail-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="detail-content">
+      <div class="detail-thumb" id="detail-thumb"></div>
+      <h2 class="detail-title" id="detail-title"></h2>
+      <p class="detail-date" id="detail-date"></p>
+      <p class="detail-description" id="detail-description"></p>
+      <div class="detail-links" id="detail-links"></div>
+    </div>
+  </aside>
+<script>
+(function() {
+  'use strict';
+
+  var ICON_PREVIEW = '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="24" cy="24" r="7"/><circle cx="24" cy="24" r="2.5"/></svg>';
+
+  const PROJECT_DATA = [
+    { name: "RG Design Manual", category: "Client Projects", date: "April 2025", description: "A branded design manual and interactive website for Rittinghaus & Godau — clients can view, explore, and download brand assets, typography guidelines, and color palettes in one place.", thumbnail: null, liveUrl: "https://frederic911.github.io/rg-design-manual/RG_Design_Manual_v0.1.html", githubUrl: null },
+    { name: "SlideHome", category: "Startup Ops", date: "January 2025", description: "Presentation engagement SaaS that helps teams run more interactive, data-driven meetings. Real-time polling, Q&A, and analytics layered on top of existing slide decks.", thumbnail: null, liveUrl: "https://slidehome.io", githubUrl: null },
+    { name: "JERY Portfolio", category: "Hobby Builds", date: "November 2024", description: "A minimal portfolio site for the JERY creative agency — built as a personal project to explore clean layout systems and typography-driven design in a single-page format.", thumbnail: null, liveUrl: null, githubUrl: "https://github.com/frederic911/jery-portfolio" },
+    { name: "GTM Playbook Builder", category: "Startup Ops", date: "September 2024", description: "An internal Notion-style tool for mapping out go-to-market motion — channels, messaging pillars, and conversion hypotheses laid out in a clean, interconnected grid.", thumbnail: null, liveUrl: null, githubUrl: null },
+    { name: "Pitch Deck Toolkit", category: "Hobby Builds", date: "July 2024", description: "A collection of reusable Slide templates and narrative frameworks for early-stage fundraising — built for personal use and shared with founders in the Munich startup community.", thumbnail: null, liveUrl: null, githubUrl: "https://github.com/frederic911/pitch-deck-toolkit" },
+    { name: "Munich Startup Map", category: "Hobby Builds", date: "May 2024", description: "An interactive map visualizing the Munich startup ecosystem — founders, investors, and co-working spaces as a community resource for the local scene.", thumbnail: null, liveUrl: null, githubUrl: "https://github.com/frederic911/munich-startup-map" }
+  ];
+
+  let activeFilter = 'all';
+  let sortNewestFirst = true;
+  const projectsList = document.getElementById('projects-list');
+  const detailPanel = document.getElementById('detail-panel');
+  const detailOverlay = document.getElementById('detail-overlay');
+  const addBtn = document.getElementById('add-btn');
+  const filterBtns = document.querySelectorAll('.filter-btn');
+
+  const ICON_LINK = '<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8.5l3-3M8 2.5h3v3"/><rect x="1" y="1" width="11" height="11" rx="2"/></svg>';
+  const ICON_GITHUB = '<svg viewBox="0 0 13 13" fill="currentColor"><path d="M6.5 0C2.9 0 0 2.9 0 6.5c0 2.9 1.9 5.3 4.5 6.2.3.1.4-.1.4-.3v-1c-1.8.4-2.2-.9-2.2-.9-.3-.7-.7-.9-.7-.9-.6-.4 0-.4 0-.4.6 0 .9.6.9.6.6 1 1.5.7 1.9.5.1-.4.2-.7.4-.9-1.4-.2-2.9-.7-2.9-3.1 0-.7.2-1.3.6-1.7-.1-.2-.3-.8.1-1.7 0 0 .5-.2 1.6.6.5-.1 1-.2 1.5-.2s1 .1 1.5.2c1.1-.7 1.6-.6 1.6-.6.4.9.2 1.5.1 1.7.4.4.6 1 .6 1.7 0 2.4-1.5 2.9-2.9 3.1.2.2.4.6.4 1.2v1.8c0 .2.1.4.4.3C11.1 11.8 13 9.4 13 6.5 13 2.9 10.1 0 6.5 0z"/></svg>';
+
+  function getFilteredProjects() {
+    var data = PROJECT_DATA.slice();
+    if (activeFilter !== 'all') data = data.filter(function(p) { return p.category === activeFilter; });
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    data.sort(function(a, b) {
+      var am = a.date.split(' ')[0], ay = parseInt(a.date.split(' ')[1]);
+      var bm = b.date.split(' ')[0], by2 = parseInt(b.date.split(' ')[1]);
+      var aVal = ay * 12 + months.indexOf(am);
+      var bVal = by2 * 12 + months.indexOf(bm);
+      return sortNewestFirst ? bVal - aVal : aVal - bVal;
+    });
+    return data;
+  }
+
+  function renderProjectCard(project, index) {
+    var thumbHTML = project.thumbnail
+      ? '<img src="' + project.thumbnail + '" alt="' + project.name + ' screenshot" loading="lazy">'
+      : '<div class="project-thumb-placeholder"><div class="dot-grid"></div></div>';
+    var linksHTML = '';
+    if (project.liveUrl) linksHTML += '<a class="project-link" href="' + project.liveUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + ICON_LINK + ' Live</a>';
+    if (project.githubUrl) linksHTML += '<a class="project-link" href="' + project.githubUrl + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + ICON_GITHUB + ' GitHub</a>';
+    return '<article class="project-card" data-index="' + index + '"><div class="project-card-inner"><div class="project-thumb">' + thumbHTML + '</div><div class="project-body"><div class="project-links">' + linksHTML + '</div><div class="project-top"><h2 class="project-name">' + project.name + '</h2><span class="project-date">' + project.date + '</span><p class="project-description">' + project.description + '</p></div></div></div></article>';
+  }
+
+  function renderProjects() {
+    var data = getFilteredProjects();
+    if (data.length === 0) {
+      projectsList.innerHTML = '<div class="empty-state">No projects in this category yet.</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < data.length; i++) html += renderProjectCard(data[i], i);
+    projectsList.innerHTML = html;
+  }
+
+
+  function openDetail(project) {
+    document.getElementById('detail-thumb').innerHTML = project.thumbnail
+      ? '<img src="' + project.thumbnail + '" alt="' + project.name + ' screenshot">'
+      : '<div class="detail-thumb-placeholder"><div class="dot-grid"></div>' + ICON_PREVIEW + '</div>';
+    document.getElementById('detail-cat-tag').textContent = project.category;
+    document.getElementById('detail-title').textContent = project.name;
+    document.getElementById('detail-date').textContent = project.date;
+    document.getElementById('detail-description').textContent = project.description;
+    var linksHTML = '';
+    if (project.liveUrl) linksHTML += '<a class="detail-link" href="' + project.liveUrl + '" target="_blank" rel="noopener">' + ICON_LINK + ' View Live</a>';
+    if (project.githubUrl) linksHTML += '<a class="detail-link" href="' + project.githubUrl + '" target="_blank" rel="noopener">' + ICON_GITHUB + ' GitHub</a>';
+    document.getElementById('detail-links').innerHTML = linksHTML;
+    detailPanel.classList.add('open');
+    detailOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetail() {
+    detailPanel.classList.remove('open');
+    detailOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  filterBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      filterBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      renderProjects();
+    });
+  });
+
+  projectsList.addEventListener('click', function(e) {
+    if (e.target.closest('.project-link')) return;
+    var card = e.target.closest('.project-card');
+    if (!card) return;
+    var idx = parseInt(card.dataset.index, 10);
+    var data = getFilteredProjects();
+    if (data[idx]) openDetail(data[idx]);
+  });
+
+  document.getElementById('detail-close').addEventListener('click', closeDetail);
+  detailOverlay.addEventListener('click', closeDetail);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDetail(); });
+
+  addBtn.addEventListener('click', function() {
+    PROJECT_DATA.push({ name: 'New Project', category: 'Hobby Builds', date: 'May 2026', description: 'Add your description here.', thumbnail: null, liveUrl: null, githubUrl: null });
+    renderProjects();
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  });
+
+  renderProjects();
+})();
+</script>
+</body>
+</html>
