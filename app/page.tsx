@@ -27,6 +27,17 @@ function sortProjects(data: Project[]): Project[] {
   });
 }
 
+function parseMonth(dateStr: string): string {
+  const parts = dateStr.split(" ");
+  return MONTHS.includes(parts[0]) ? parts[0] : MONTHS[new Date().getMonth()];
+}
+
+function parseYear(dateStr: string): string {
+  const parts = dateStr.split(" ");
+  const y = parseInt(parts[1]);
+  return isNaN(y) ? String(new Date().getFullYear()) : String(y);
+}
+
 const LinkIcon = () => (
   <svg viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
     <path d="M5 8.5l3-3M8 2.5h3v3" /><rect x="1" y="1" width="11" height="11" rx="2" />
@@ -51,6 +62,9 @@ const TrashIcon = () => (
   </svg>
 );
 
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 10 }, (_, i) => String(currentYear - 5 + i));
+
 function EditModal({
   project,
   onSave,
@@ -65,7 +79,8 @@ function EditModal({
   const isNew = !project;
   const [name, setName] = useState(project?.name ?? "");
   const [category, setCategory] = useState(project?.category ?? "Hobby Builds");
-  const [date, setDate] = useState(project?.date ?? "");
+  const [month, setMonth] = useState(project ? parseMonth(project.date) : MONTHS[new Date().getMonth()]);
+  const [year, setYear] = useState(project ? parseYear(project.date) : String(currentYear));
   const [description, setDescription] = useState(project?.description ?? "");
   const [liveUrl, setLiveUrl] = useState(project?.liveUrl ?? "");
   const [githubUrl, setGithubUrl] = useState(project?.githubUrl ?? "");
@@ -86,7 +101,15 @@ function EditModal({
         </div>
         <div className="modal-field">
           <label>Date</label>
-          <input value={date} onChange={(e) => setDate(e.target.value)} placeholder="May 2025" />
+          <div style={{ display: "flex", gap: "8px" }}>
+            <select value={month} onChange={(e) => setMonth(e.target.value)} style={{ flex: 1 }}>
+              {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={year} onChange={(e) => setYear(e.target.value)} style={{ width: "100px" }}>
+              {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+              {!YEARS.includes(year) && <option value={year}>{year}</option>}
+            </select>
+          </div>
         </div>
         <div className="modal-field">
           <label>Description</label>
@@ -114,7 +137,7 @@ function EditModal({
                 ...(project ? { id: project.id } : {}),
                 name,
                 category,
-                date,
+                date: `${month} ${year}`,
                 description,
                 liveUrl: liveUrl || null,
                 githubUrl: githubUrl || null,
@@ -163,32 +186,44 @@ export default function Home() {
   );
 
   const handleSave = async (data: Partial<Project> & { id?: string }) => {
-    if (data.id) {
-      await fetch(`/api/projects/${data.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-    } else {
-      await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+    try {
+      if (data.id) {
+        const res = await fetch(`/api/projects/${data.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) console.error("Save failed:", await res.text());
+      } else {
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) console.error("Create failed:", await res.text());
+      }
+    } catch (err) {
+      console.error("Save error:", err);
     }
     setEditProject(null);
     setDetailProject(null);
-    fetchProjects();
+    await fetchProjects();
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this project?")) return;
-    await fetch(`/api/projects/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) console.error("Delete failed:", await res.text());
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
     setEditProject(null);
     setDetailProject(null);
-    fetchProjects();
+    await fetchProjects();
   };
 
   return (
@@ -334,6 +369,7 @@ export default function Home() {
 
       {editProject !== null && (
         <EditModal
+          key={editProject === "new" ? "new" : editProject.id}
           project={editProject === "new" ? null : editProject}
           onSave={handleSave}
           onDelete={editProject !== "new" ? handleDelete : undefined}

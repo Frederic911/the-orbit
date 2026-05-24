@@ -26,11 +26,12 @@ a { color: inherit; text-decoration: none; }
   max-width: var(--content-width);
   margin: 16px auto 0;
   padding: 0 48px;
+  transform: translateZ(0);
 }
 .topbar-inner {
-  background: rgba(10,10,10,0.92);
-  backdrop-filter: blur(40px) saturate(120%);
-  -webkit-backdrop-filter: blur(40px) saturate(120%);
+  background: rgba(8,8,8,0.96);
+  backdrop-filter: blur(60px) saturate(130%);
+  -webkit-backdrop-filter: blur(60px) saturate(130%);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px 20px;
