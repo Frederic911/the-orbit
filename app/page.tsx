@@ -85,22 +85,42 @@ function EditModal({
   const [liveUrl, setLiveUrl] = useState(project?.liveUrl ?? "");
   const [githubUrl, setGithubUrl] = useState(project?.githubUrl ?? "");
 
+  const [error, setError] = useState("");
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    setError("");
+    onSave({
+      ...(project ? { id: project.id } : {}),
+      name: name.trim(),
+      category,
+      date: `${month} ${year}`,
+      description: description.trim(),
+      liveUrl: liveUrl.trim() || null,
+      githubUrl: githubUrl.trim() || null,
+    });
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>{isNew ? "Add Project" : "Edit Project"}</h2>
+        {error && <p className="modal-error">{error}</p>}
         <div className="modal-field">
-          <label>Name</label>
+          <label>Name <span className="required">*</span></label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" />
         </div>
         <div className="modal-field">
-          <label>Category</label>
+          <label>Category <span className="required">*</span></label>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="modal-field">
-          <label>Date</label>
+          <label>Date <span className="required">*</span></label>
           <div style={{ display: "flex", gap: "8px" }}>
             <select value={month} onChange={(e) => setMonth(e.target.value)} style={{ flex: 1 }}>
               {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -113,15 +133,15 @@ function EditModal({
         </div>
         <div className="modal-field">
           <label>Description</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description..." />
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description (optional)" />
         </div>
         <div className="modal-field">
           <label>Live URL</label>
-          <input value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} placeholder="https://..." />
+          <input value={liveUrl} onChange={(e) => setLiveUrl(e.target.value)} placeholder="https://... (optional)" />
         </div>
         <div className="modal-field">
           <label>GitHub URL</label>
-          <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="https://github.com/..." />
+          <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="https://github.com/... (optional)" />
         </div>
         <div className="modal-actions">
           {!isNew && onDelete && (
@@ -130,20 +150,7 @@ function EditModal({
             </button>
           )}
           <button className="modal-btn cancel" onClick={onClose}>Cancel</button>
-          <button
-            className="modal-btn save"
-            onClick={() =>
-              onSave({
-                ...(project ? { id: project.id } : {}),
-                name,
-                category,
-                date: `${month} ${year}`,
-                description,
-                liveUrl: liveUrl || null,
-                githubUrl: githubUrl || null,
-              })
-            }
-          >
+          <button className="modal-btn save" onClick={handleSubmit}>
             {isNew ? "Add" : "Save"}
           </button>
         </div>

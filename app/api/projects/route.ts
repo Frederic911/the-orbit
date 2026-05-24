@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { name, category, date, description, liveUrl, githubUrl } = body;
 
-  if (!name || !category || !date || !description) {
+  if (!name || !category || !date) {
     return NextResponse.json(
-      { error: "Missing required fields: name, category, date, description" },
+      { error: "Missing required fields: name, category, date" },
       { status: 400 }
     );
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     name,
     category,
     date,
-    description,
+    description: description || "",
     thumbnail: null,
     liveUrl: liveUrl || null,
     githubUrl: githubUrl || null,
