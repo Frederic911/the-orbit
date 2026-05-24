@@ -127,18 +127,17 @@ function EditModal({
         method: "POST",
         body: formData,
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setThumbnailUrl(data.thumbnail);
         onThumbnailChange?.();
       } else {
-        const errData = await res.text();
-        console.error("Upload failed:", res.status, errData);
-        setError(`Upload failed (${res.status}) — try again`);
+        console.error("Upload failed:", res.status, data);
+        setError(data.error || `Upload failed (${res.status})`);
       }
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Upload failed — check console for details");
+      setError("Network error — check your connection");
     }
     setUploading(false);
   };
@@ -239,7 +238,7 @@ function EditModal({
               >
                 <UploadIcon />
                 <span>{uploading ? "Uploading..." : "Click or drag image here"}</span>
-                <span className="thumb-hint">JPG, PNG, or WebP — max 4MB</span>
+                <span className="thumb-hint">JPG, PNG, or WebP — max 4MB — displayed at 16:9</span>
               </div>
             )}
           </div>
