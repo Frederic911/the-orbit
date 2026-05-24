@@ -159,11 +159,36 @@ function EditModal({
   );
 }
 
+function DeleteConfirm({
+  name,
+  onConfirm,
+  onCancel,
+}: {
+  name: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-icon"><TrashIcon /></div>
+        <h3>Delete project?</h3>
+        <p>&ldquo;{name}&rdquo; will be permanently removed.</p>
+        <div className="confirm-actions">
+          <button className="modal-btn cancel" onClick={onCancel}>Cancel</button>
+          <button className="modal-btn delete-confirm" onClick={onConfirm}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState("all");
   const [detailProject, setDetailProject] = useState<Project | null>(null);
   const [editProject, setEditProject] = useState<Project | null | "new">(null);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProjects = useCallback(async () => {
@@ -180,6 +205,7 @@ export default function Home() {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        setDeleteTarget(null);
         setDetailProject(null);
         setEditProject(null);
       }
@@ -217,17 +243,23 @@ export default function Home() {
     await fetchProjects();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this project?")) return;
+  const requestDelete = (project: Project) => {
+    setDeleteTarget(project);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/projects/${id}`, {
+      const res = await fetch(`/api/projects/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deleteTarget.id }),
       });
       if (!res.ok) console.error("Delete failed:", await res.text());
     } catch (err) {
       console.error("Delete error:", err);
     }
+    setDeleteTarget(null);
     setEditProject(null);
     setDetailProject(null);
     await fetchProjects();
@@ -335,7 +367,7 @@ export default function Home() {
                 <button
                   className="action-btn delete"
                   title="Delete"
-                  onClick={() => handleDelete(detailProject.id)}
+                  onClick={() => requestDelete(detailProject)}
                 >
                   <TrashIcon />
                 </button>
@@ -379,8 +411,19 @@ export default function Home() {
           key={editProject === "new" ? "new" : editProject.id}
           project={editProject === "new" ? null : editProject}
           onSave={handleSave}
-          onDelete={editProject !== "new" ? handleDelete : undefined}
+          onDelete={editProject !== "new" ? (id: string) => {
+            const p = projects.find(pr => pr.id === id);
+            if (p) requestDelete(p);
+          } : undefined}
           onClose={() => setEditProject(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirm
+          name={deleteTarget.name}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
     </>
