@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface Project {
   id: string;
@@ -62,6 +62,18 @@ const TrashIcon = () => (
   </svg>
 );
 
+const UploadIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+  </svg>
+);
+
+const SwapIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2l3 3-3 3M1 5h14M4 14l-3-3 3-3M15 11H1" />
+  </svg>
+);
+
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => String(currentYear - 5 + i));
 
@@ -70,11 +82,13 @@ function EditModal({
   onSave,
   onDelete,
   onClose,
+  onThumbnailChange,
 }: {
   project: Project | null;
   onSave: (data: Partial<Project> & { id?: string }) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
+  onThumbnailChange?: () => void;
 }) {
   const isNew = !project;
   const [name, setName] = useState(project?.name ?? "");
@@ -84,8 +98,73 @@ function EditModal({
   const [description, setDescription] = useState(project?.description ?? "");
   const [liveUrl, setLiveUrl] = useState(project?.liveUrl ?? "");
   const [githubUrl, setGithubUrl] = useState(project?.githubUrl ?? "");
+  const [thumbnailUrl, setThumbnailUrl] = useState(project?.thumbnail ?? null);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState("");
+
+  const handleFileUpload = async (file: File) => {
+    if (!project?.id) {
+      setError("Save the project first, then add a thumbnail");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file (JPG, PNG, WebP)");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Image must be under 4MB");
+      return;
+    }
+    setError("");
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`/api/projects/${project.id}/thumbnail`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setThumbnailUrl(data.thumbnail);
+        onThumbnailChange?.();
+      } else {
+        setError("Upload failed — try again");
+      }
+    } catch {
+      setError("Upload failed — try again");
+    }
+    setUploading(false);
+  };
+
+  const handleRemoveThumbnail = async () => {
+    if (!project?.id) return;
+    setUploading(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/thumbnail`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        setThumbnailUrl(null);
+        onThumbnailChange?.();
+      }
+    } catch {
+      setError("Failed to remove thumbnail");
+    }
+    setUploading(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  };
 
   const handleSubmit = () => {
     if (!name.trim()) {
@@ -109,6 +188,62 @@ function EditModal({
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>{isNew ? "Add Project" : "Edit Project"}</h2>
         {error && <p className="modal-error">{error}</p>}
+
+        {!isNew && (
+          <div className="modal-field">
+            <label>Thumbnail</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file);
+                e.target.value = "";
+              }}
+            />
+            {thumbnailUrl ? (
+              <div className="thumb-preview">
+                <img src={thumbnailUrl} alt="Thumbnail" />
+                <div className="thumb-overlay">
+                  <button
+                    className="thumb-action-btn"
+                    title="Replace image"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <SwapIcon />
+                  </button>
+                  <button
+                    className="thumb-action-btn delete"
+                    title="Remove image"
+                    onClick={handleRemoveThumbnail}
+                    disabled={uploading}
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`thumb-dropzone${dragOver ? " drag-over" : ""}`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+              >
+                <UploadIcon />
+                <span>{uploading ? "Uploading..." : "Click or drag image here"}</span>
+                <span className="thumb-hint">JPG, PNG, or WebP — max 4MB</span>
+              </div>
+            )}
+          </div>
+        )}
+        {isNew && (
+          <p className="thumb-new-hint">Save the project first, then you can add a thumbnail.</p>
+        )}
+
         <div className="modal-field">
           <label>Name <span className="required">*</span></label>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Project name" />
@@ -416,6 +551,7 @@ export default function Home() {
             if (p) requestDelete(p);
           } : undefined}
           onClose={() => setEditProject(null)}
+          onThumbnailChange={fetchProjects}
         />
       )}
 
