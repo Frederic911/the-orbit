@@ -178,6 +178,7 @@ function EditModal({
       category,
       date: `${month} ${year}`,
       description: description.trim(),
+      thumbnail: thumbnailUrl,
       liveUrl: liveUrl.trim() || null,
       githubUrl: githubUrl.trim() || null,
     });

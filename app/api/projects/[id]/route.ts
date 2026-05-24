@@ -18,7 +18,7 @@ export async function PUT(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const allowed = ["name", "category", "date", "description", "liveUrl", "githubUrl"];
+  const allowed = ["name", "category", "date", "description", "thumbnail", "liveUrl", "githubUrl"];
   for (const key of allowed) {
     if (key in body) {
       (projects[index] as unknown as Record<string, unknown>)[key] = body[key];
