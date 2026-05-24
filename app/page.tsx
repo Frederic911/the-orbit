@@ -132,10 +132,13 @@ function EditModal({
         setThumbnailUrl(data.thumbnail);
         onThumbnailChange?.();
       } else {
-        setError("Upload failed — try again");
+        const errData = await res.text();
+        console.error("Upload failed:", res.status, errData);
+        setError(`Upload failed (${res.status}) — try again`);
       }
-    } catch {
-      setError("Upload failed — try again");
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError("Upload failed — check console for details");
     }
     setUploading(false);
   };
